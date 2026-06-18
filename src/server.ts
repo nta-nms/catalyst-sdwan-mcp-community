@@ -118,17 +118,27 @@ private setupHandlersOn(mcpServer: McpServer): void {
       },
       
       {
-       name: 'reboot_device',
-       description: 'Reboot a SD-WAN device (vEdge/cEdge) via vManage device operation API.',
-       inputSchema: {
-          type: 'object',
-          properties: {
-           device_id: {
-             type: 'string',
-             description: 'Device ID (UUID) or system-ip',
-           },
-         },
-         required: ['device_id'],
+      name: 'reboot_device',
+      description: 'Reboot a SD-WAN device (vEdge/cEdge) via vManage device operation API.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          device_id: {
+            type: 'string',
+            description: 'System IP of the device (e.g. 172.16.31.35)',
+          },
+          device_uuid: {
+            type: 'string',
+            description: 'UUID of the device (e.g. C8K-FC163580-9B2F-7A8B-8E07-D4326F0542DD)',
+          },
+          device_type: {
+            type: 'string',
+            description: 'Device type: vedge or vedge',
+            enum: ['vedge', 'vedge'],
+            default: 'vedge',
+          },
+        },
+        required: ['device_id', 'device_uuid'],
        },
       },
 	
@@ -581,12 +591,18 @@ private setupHandlersOn(mcpServer: McpServer): void {
       }
       case 'reboot_device': {
        if (!deviceId) throw new Error('device_id is required');
+       const deviceType = args.device_type ?? 'vedge';
 
-       // Payload conforme API vManage device action reboot
        const payload = {
          action: 'reboot',
-         deviceId: [deviceId], // API attend un array
-       };
+         deviceType: deviceType,        
+         devices: [
+           {
+            deviceIP: deviceId,       
+            deviceId: args.device_uuid 
+           }
+         ],
+      };
         return this.apiService.post('/dataservice/device/action/reboot', payload);
       }
       case 'list_reachable_devices':
